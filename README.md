@@ -1,3 +1,7 @@
+⚠️THIS PROJECT IS ARCHIVED, BUT A NEW VERSION IS BEING WORKED ON AT https://github.com/digarok/gsplus <- 🦄🌈🌟
+
+-----
+
 # GS+ 
 
 An Apple IIgs emulator based on KEGS
