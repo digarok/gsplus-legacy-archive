@@ -332,7 +332,9 @@ void scc_socket_close(int port, int full_close, double dcycs) {
     return;
   }
 
-  scc_socket_modem_hangup(port, dcycs);
+  if(g_serial_modem[port]) {
+    scc_socket_modem_hangup(port, dcycs);
+  }
 
   /* and go back to modem mode */
   scc_ptr->socket_state = 0;

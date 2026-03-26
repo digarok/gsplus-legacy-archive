@@ -183,15 +183,15 @@ int a2_key_to_sdlkeycode[][3] = {
   { kVK_Control,            SDLK_LCTRL,     0 },
   { kVK_RightControl,       SDLK_RCTRL,     0 },
   #if defined(__APPLE__)
-  { kVK_Option,             SDLK_LALT,      0 },         /* Option */
-  { kVK_RightOption,        SDLK_RALT,      0 },         /* Option */
-  { kVK_Command,            SDLK_LGUI,      0 },         /* Command */
-  { kVK_RightCommand,       SDLK_RGUI,      0 },         /* Command */
+  { kVK_Option,             SDLK_LALT,      0 },         /* Command */
+  { kVK_RightOption,        SDLK_RALT,      0 },         /* Command */
+  { kVK_Command,            SDLK_LGUI,      0 },         /* Option */
+  { kVK_RightCommand,       SDLK_RGUI,      0 },         /* Option */
   #else
-  { kVK_Option,             SDLK_LGUI,      0 },         /* Command */
-  { kVK_RightOption,        SDLK_RGUI,      0 },         /* Command */
-  { kVK_Command,            SDLK_LALT,      0 },         /* Option */
-  { kVK_RightCommand,       SDLK_RALT,      0 },         /* Option */
+  { kVK_Option,             SDLK_LGUI,      0 },         /* Option */
+  { kVK_RightOption,        SDLK_RGUI,      0 },         /* Option */
+  { kVK_Command,            SDLK_LALT,      0 },         /* Command */
+  { kVK_RightCommand,       SDLK_RALT,      0 },         /* Command */
   #endif
   { kVK_Space,              SDLK_SPACE,     0 },
   { kVK_LeftArrow,          SDLK_LEFT,      0 },
@@ -654,7 +654,7 @@ void handle_sdl_mouse_event(SDL_Event event) {
     x = event.motion.x - BASE_MARGIN_LEFT;
     y = event.motion.y - BASE_MARGIN_TOP;
   }
-  
+
   switch (event.type) {
     case SDL_MOUSEMOTION:
       update_mouse_w_delta(x, y, 0, 0, event.motion.xrel, event.motion.yrel);

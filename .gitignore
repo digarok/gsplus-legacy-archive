@@ -17,7 +17,7 @@ gsport
 
 *.gsp
 
-# Storage for many disk images for testing the emulator.  
+# Storage for many disk images for testing the emulator.
 # Games, demos, apps, etc.  Not part of the project.
 images/
 
@@ -25,4 +25,5 @@ images/
 screens/
 
 # build tools that are often kept/tested locally as well as on the ci machines
+build/
 yoursway-create-dmg/
