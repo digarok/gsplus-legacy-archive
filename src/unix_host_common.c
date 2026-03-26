@@ -256,10 +256,25 @@ void host_get_file_xinfo(const char *path, struct file_info *fi) {
 void host_get_file_xinfo(const char *path, struct file_info *fi) {
 
   ssize_t tmp;
-  tmp = getxattr(path, "user.com.apple.ResourceFork", NULL, 0);
-  if (tmp < 0) tmp = 0;
-  fi->resource_eof = tmp;
-  fi->resource_blocks = (tmp + 511) / 512;
+  struct stat st;
+  char rpath[1024] = {0};
+  char *pos=strrchr(path,'/');
+  if (pos) {
+    strncpy(rpath, path, (pos-path)+1);
+  } else {
+    pos = (char *)path - 1;
+  }
+  strcat(rpath, "._");
+  strcat(rpath, pos+1);
+
+  int ok = stat(rpath, &st);
+  if (ok < 0) {
+      fi->resource_eof = 0;
+      fi->resource_blocks = 0;
+  } else {
+      fi->resource_eof = st.st_size;
+      fi->resource_blocks = st.st_blocks;
+  }
 
   tmp = getxattr(path, "user.com.apple.FinderInfo", fi->finder_info, 32);
   if (tmp == 16 || tmp == 32) {
@@ -398,7 +413,7 @@ word32 host_set_file_info(const char *path, struct file_info *fi) {
 word32 host_set_file_info(const char *path, struct file_info *fi) {
 
   if (fi->has_fi && fi->storage_type != 0x0d) {
-    int ok = setxattr(path, "user.apple.FinderInfo", fi->finder_info, 32, 0);
+    int ok = setxattr(path, "user.com.apple.FinderInfo", fi->finder_info, 32, 0);
     if (ok < 0) return host_map_errno(errno);
   }
 

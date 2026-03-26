@@ -406,6 +406,14 @@ static char *get_path2(void) {
   return NULL;
 }
 
+#if defined (__linux__)
+static void get_resource_pathname(const char *path, char *rpath) {
+  char *pos=strrchr(path,'/');
+  strncpy(rpath, path, (pos-path)+1);
+  strcat(rpath, "._");
+  strcat(rpath, pos+1);
+}
+#endif 
 
 /*
  * shutdown is called when switching to p8.
@@ -546,6 +554,17 @@ static word32 fst_destroy(int class, const char *path) {
   int ok = S_ISDIR(st.st_mode) ? rmdir(path) : unlink(path);
 
 
+#if defined(__linux__) 
+  if (! S_ISDIR(st.st_mode)) {
+    // on linux remove the resource fork file as well.
+    char rpath[1024]; 
+    get_resource_pathname(path, rpath);
+    if (stat(rpath, &st) == 0) {
+      int ok2 = unlink(rpath);
+      if (ok2 < 0) return host_map_errno_path(errno, path);
+    }
+  }
+#endif 
   if (ok < 0) return host_map_errno_path(errno, path);
   return 0;
 }
@@ -768,12 +787,18 @@ static int open_data_fork(const char *path, word16 *access, word16 *error) {
 
   return fd;
 }
+#if defined(__APPLE__) || defined(__linux__)
+static int open_resource_fork(const char *path, word16 *access, word16 *error) {
 #if defined(__APPLE__)
 static int open_resource_fork(const char *path, word16 *access, word16 *error) {
   // os x / hfs/apfs don't need to specifically create a resource fork.
   // or do they?
 
   char *rpath = host_gc_append_path(path, _PATH_RSRCFORKSPEC);
+#else
+  char rpath[1024]; 
+  get_resource_pathname(path, rpath);
+#endif
 
   int fd = -1;
   for (;;) {
@@ -851,11 +876,6 @@ static int open_resource_fork(const char *path, word16 *access, word16 *error) {
   close(tmp);
 
   return fd;
-}
-#elif defined __linux__
-static int open_resource_fork(const char *path, word16 *access, word16 *error) {
-  *error = resForkNotFound;
-  return -1;
 }
 #else
 static int open_resource_fork(const char *path, word16 *access, word16 *error) {
@@ -1534,9 +1554,20 @@ static word32 fst_change_path(int class, const char *path1, const char *path2) {
     return invalidAccess;
 
   // rename will delete any previous file. ChangePath should return an error.
+#if ! defined(__linux__)
   if (stat(path2, &st) == 0) return dupPathname;
 
   if (rename(path1, path2) < 0) return host_map_errno_path(errno, path2);
+#else
+  //on linux rename both the file and the resource file.
+  char rpath1[1024], rpath2[1024]; 
+  get_resource_pathname(path1, rpath1);
+  get_resource_pathname(path2, rpath2);
+  if (stat(path2, &st) == 0 || stat(rpath2, &st) == 0) return dupPathname;
+  if (rename(path1, path2) < 0) return host_map_errno_path(errno, path2);
+  if (rename(rpath1, rpath2) < 0) return host_map_errno_path(errno, rpath2);
+
+#endif
   return 0;
 }
 
