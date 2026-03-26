@@ -45,12 +45,13 @@ static const Bit16u intCharSets[8][10] =
 	{0x00a3, 0x00a7, 0x00a1, 0x00d1, 0x00bf, 0x0060, 0x00b0, 0x00f1, 0x00e7, 0x007e}, // Spanish
 };
 
+#define N_PAPER_SIZES 7
 /*
 Paper size definitions. Units are Postscript points (1/72in).
 This list is based on the options available in the GS/OS
 Imagewriter LQ driver.
 */
-static const Bit16u paperSizes[7][2] =
+static const Bit16u paperSizes[N_PAPER_SIZES][2] =
 {
 	{612, 792}, //US Letter 8.5 x 11in
 	{612, 1008}, //US Legal 8.5 x 14in

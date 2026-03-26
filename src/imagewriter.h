@@ -73,6 +73,7 @@
 #include <winspool.h>
 #endif
 
+#define STYLE_BASE 0x00
 #define STYLE_PROP 0x01
 #define STYLE_CONDENSED 0x02
 #define STYLE_BOLD 0x04
