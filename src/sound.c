@@ -893,14 +893,9 @@ void sound_play(double dsamps) {
       off = imul * 128;
 
       samps_to_do = MIN(samps_left, num_samps - samp_offset);
-      if(imul == 0 || samps_to_do == 0) {
+      if(samps_to_do == 0) {
         /* produce no sound */
-        samps_left = samps_left - samps_to_do;
-        cur_acc += cur_inc * samps_to_do;
-        rptr->samps_left = samps_left;
-        rptr->cur_acc = cur_acc;
-        cur_dsamp = last_dsamp +
-                    (double)(samps_to_do + samp_offset);
+        cur_dsamp = last_dsamp + (double)(samp_offset);
         DOC_LOG("nosnd", osc, cur_dsamp, samps_to_do);
         rptr->complete_dsamp = dsamp_now;
         cur_pos = rptr->cur_start+(cur_acc & cur_mask);
