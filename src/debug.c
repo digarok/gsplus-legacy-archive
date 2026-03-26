@@ -527,8 +527,8 @@ void handle_set_bytes(int address, char *bytes_data) {
   while (sscanf(bytes_data, "%02x", &byte) == 1) {
     printf("$%02x <---- BYTE @ $%06X\n", byte, address );
     bytes_data += 2;
-    address++;
     set_byte_at_address(address, byte & 0xFF);
+    address++;
   }
 }
 
@@ -1027,7 +1027,7 @@ void debug_server_poll() {
           /* failure occurs, we will close the                 */
           /* connection.                                       */
           /*****************************************************/
-          rc = recv(fds[i].fd, buffer, sizeof(buffer), 0);
+          rc = recv(fds[i].fd, buffer, sizeof(buffer), MSG_DONTWAIT);
           if (rc < 0) {
             if (errno != EWOULDBLOCK) {
               perror("recv() failed");
@@ -1313,7 +1313,7 @@ int do_dis_json(char *buf, word32 kpc, int accsize, int xsize, int op_provided, 
       sprintf(buf_disasm,"%s   [$%0*x],Y",out,args*2,val);
       break;
 
-    case IMMED:
+    case IMMEDIATE:
       sprintf(buf_disasm,"%s   #$%0*x",out, args*2, val);
       break;
 
