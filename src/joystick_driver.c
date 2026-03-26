@@ -22,8 +22,8 @@
 #ifdef HAVE_SDL
 # include "SDL.h"
 //@todo: multiple joysticks/more buttons/button config
-//static SDL_Joystick *joy0, *joy1;
-SDL_Joystick *gGameController = NULL;
+//static SDL_GameController *joy0, *joy1;
+SDL_GameController *gGameController = NULL;
 #endif
 
 
@@ -42,37 +42,36 @@ const char *g_joystick_dev = "/dev/input/js0";  /* default joystick dev file */
 int g_joystick_native_fd = -1;
 int g_joystick_num_axes = 0;
 int g_joystick_num_buttons = 0;
-int g_joystick_number = 0;                              // SDL2
-int g_joystick_x_axis = 0;                              // SDL2
-int g_joystick_y_axis = 1;                              // SDL2
-int g_joystick_button_0 = 0;                    // SDL2
-int g_joystick_button_1 = 1;            // SDL2
+int g_joystick_number = 0;          // SDL2
+int g_joystick_x_axis = 0;          // SDL_CONTROLLER_AXIS_LEFTX
+int g_joystick_y_axis = 1;          // SDL_CONTROLLER_AXIS_LEFTY
+int g_joystick_button_0 = 0;        // SDL_CONTROLLER_BUTTON_A
+int g_joystick_button_1 = 1;        // SDL_CONTROLLER_BUTTON_B
 
-int g_joystick_x2_axis = 2;                             // SDL2
-int g_joystick_y2_axis = 3;                             // SDL2
-int g_joystick_button_2 = 2;                    // SDL2
-int g_joystick_button_3 = 3;            // SDL2
+int g_joystick_x2_axis = 2;         // SDL_CONTROLLER_AXIS_RIGHTX
+int g_joystick_y2_axis = 3;         // SDL_CONTROLLER_AXIS_RIGHTY
+int g_joystick_button_2 = 2;        // SDL_CONTROLLER_BUTTON_X
+int g_joystick_button_3 = 3;        // SDL_CONTROLLER_BUTTON_Y
 #define JOY2SUPPORT
 
 
 #if defined(HAVE_SDL) && !defined(JOYSTICK_DEFINED)
 # define JOYSTICK_DEFINED
+// Gamepad
 void joystick_init()      {
   int i;
-  if( SDL_Init( SDL_INIT_JOYSTICK ) < 0 ) {
-    glogf( "SDL could not initialize joystick! SDL Error: %s", SDL_GetError() );
+  if( SDL_Init( SDL_INIT_GAMECONTROLLER ) < 0 ) {
+    glogf( "SDL could not initialize gamepad! SDL Error: %s", SDL_GetError() );
   } else {
-    glog("SDL2 joystick initialized");
+    glog("SDL2 gamepad initialized");
   }
   if (SDL_NumJoysticks()<1) {
-    glog("No joysticks detected");
-    SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
+    glog("No gamepads detected");
+    SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
   } else {
-    // @todo: make controller configurable
-    // @todo: add multiple controller support
-    gGameController = SDL_JoystickOpen( g_joystick_number );
+    gGameController = SDL_GameControllerOpen( g_joystick_number );
     if( gGameController == NULL ) {
-      glogf( "Warning: Unable to open game controller! SDL Error: %s", SDL_GetError() );
+      glogf( "Warning: Unable to open gamepad! SDL Error: %s", SDL_GetError() );
     }
   }
   g_joystick_native_type = 2;
@@ -82,38 +81,77 @@ void joystick_init()      {
     g_paddle_val[i] = 180;
   }
   g_joystick_type = JOYSTICK_TYPE_NATIVE_1;
-  SDL_JoystickUpdate();
+  SDL_GameControllerUpdate();
   joystick_update(0.0);
 }
 
 void joystick_update(double dcycs)      {
   if (gGameController) {
-    SDL_JoystickUpdate();
-    g_paddle_val[0] = (int)SDL_JoystickGetAxis(gGameController, g_joystick_x_axis);   // default is 0
-    g_paddle_val[1] = (int)SDL_JoystickGetAxis(gGameController, g_joystick_y_axis);   // default is 1
-    g_paddle_val[2] = (int)SDL_JoystickGetAxis(gGameController, g_joystick_x2_axis);  // default is 2
-    g_paddle_val[3] = (int)SDL_JoystickGetAxis(gGameController, g_joystick_y2_axis);  // default is 3
+    SDL_GameControllerUpdate();
+    g_paddle_val[0] = (int)SDL_GameControllerGetAxis(gGameController, g_joystick_x_axis);   // default is 0
+    g_paddle_val[1] = (int)SDL_GameControllerGetAxis(gGameController, g_joystick_y_axis);   // default is 1
+    g_paddle_val[2] = (int)SDL_GameControllerGetAxis(gGameController, g_joystick_x2_axis);  // default is 2
+    g_paddle_val[3] = (int)SDL_GameControllerGetAxis(gGameController, g_joystick_y2_axis);  // default is 3
 
-    if (SDL_JoystickGetButton(gGameController, g_joystick_button_0)) {
+    // D-pad will override thumb stick values.
+    if (SDL_GameControllerGetButton(gGameController, SDL_CONTROLLER_BUTTON_DPAD_LEFT)) {
+      g_paddle_val[0] = -32768;
+    }
+    if (SDL_GameControllerGetButton(gGameController, SDL_CONTROLLER_BUTTON_DPAD_RIGHT)) {
+      g_paddle_val[0] = 32767;
+    }
+    if (SDL_GameControllerGetButton(gGameController, SDL_CONTROLLER_BUTTON_DPAD_UP)) {
+      g_paddle_val[1] = -32768;
+    }
+    if (SDL_GameControllerGetButton(gGameController, SDL_CONTROLLER_BUTTON_DPAD_DOWN)) {
+      g_paddle_val[1] = 32767;
+    }
+
+    // These are the face buttons (xbox:A,B,X,Y ps:x,o,square,triangle)
+    if (SDL_GameControllerGetButton(gGameController, g_joystick_button_0)) {
       g_paddle_buttons = g_paddle_buttons | 1;
     } else {
       g_paddle_buttons = g_paddle_buttons & (~1);
     }
-    if (SDL_JoystickGetButton(gGameController, g_joystick_button_1)) {
+    if (SDL_GameControllerGetButton(gGameController, g_joystick_button_1)) {
       g_paddle_buttons = g_paddle_buttons | 2;
     } else {
       g_paddle_buttons = g_paddle_buttons & (~2);
     }
-    if (SDL_JoystickGetButton(gGameController, g_joystick_button_2)) {
+    if (SDL_GameControllerGetButton(gGameController, g_joystick_button_2)) {
       g_paddle_buttons = g_paddle_buttons | 4;
     } else {
       g_paddle_buttons = g_paddle_buttons & (~4);
     }
-    if (SDL_JoystickGetButton(gGameController, g_joystick_button_3)) {
+    if (SDL_GameControllerGetButton(gGameController, g_joystick_button_3)) {
       g_paddle_buttons = g_paddle_buttons | 8;
     } else {
       g_paddle_buttons = g_paddle_buttons & (~8);
     }
+
+    // The trigger/shoulder buttons are mapped to help right thumb stick usage.
+    // Otherwise someone would need to remove the thumb to press a face button.  All these
+    // logically OR with the face buttons.  The face buttons control if a button is released.
+
+    // Note that the intent of these changes (shoulder/trigger/right stick on a D-pad) are to
+    // enable novel experiences that historical games did not support.  For example, Robotron-type
+    // games could have used two joysticks but didn't.  A new game could take advantage of this.
+
+    // It might be better for historical games usage for the emulator to support two concurrent
+    // controllers in the menu system than one "super controller".
+    if (SDL_GameControllerGetAxis(gGameController, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) > 16384) {
+      g_paddle_buttons = g_paddle_buttons | 1;
+    }
+    if (SDL_GameControllerGetAxis(gGameController, SDL_CONTROLLER_AXIS_TRIGGERLEFT) > 16384) {
+      g_paddle_buttons = g_paddle_buttons | 2;
+    }
+    if (SDL_GameControllerGetButton(gGameController, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)) {
+      g_paddle_buttons = g_paddle_buttons | 4;
+    }
+    if (SDL_GameControllerGetButton(gGameController, SDL_CONTROLLER_BUTTON_LEFTSHOULDER)) {
+      g_paddle_buttons = g_paddle_buttons | 8;
+    }
+
     paddle_update_trigger_dcycs(dcycs);
   }
 }
@@ -122,7 +160,7 @@ void joystick_update_buttons()      {
 }
 
 void joystick_shut() {
-  SDL_JoystickClose( gGameController );
+  SDL_GameControllerClose( gGameController );
   gGameController = NULL;
 }
 #endif
