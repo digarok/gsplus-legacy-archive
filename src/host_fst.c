@@ -408,12 +408,12 @@ static char *get_path2(void) {
 
 #if defined (__linux__)
 static void get_resource_pathname(const char *path, char *rpath) {
-  char *pos=strrchr(path,'/');
-  strncpy(rpath, path, (pos-path)+1);
-  strcat(rpath, "._");
-  strcat(rpath, pos+1);
+  char *cpath = strdup(path); 
+  snprintf(rpath,1024,"%s/._%s",dirname(cpath),basename(cpath));
+  free(cpath);
 }
 #endif 
+
 
 /*
  * shutdown is called when switching to p8.
@@ -552,19 +552,18 @@ static word32 fst_destroy(int class, const char *path) {
     return badStoreType;
 
   int ok = S_ISDIR(st.st_mode) ? rmdir(path) : unlink(path);
-
-
-#if defined(__linux__) 
-  if (! S_ISDIR(st.st_mode)) {
-    // on linux remove the resource fork file as well.
-    char rpath[1024]; 
+#if defined(__linux__)
+  if ((ok >= 0) && (!S_ISDIR(st.st_mode))) {
+    //delete the resource fork file if the unlink was successful
+    char rpath[1024] = {0};
     get_resource_pathname(path, rpath);
-    if (stat(rpath, &st) == 0) {
-      int ok2 = unlink(rpath);
-      if (ok2 < 0) return host_map_errno_path(errno, path);
-    }
+    fprintf(stderr,"delete res %s\n",rpath);
+    unlink(rpath);
   }
-#endif 
+#endif
+
+
+
   if (ok < 0) return host_map_errno_path(errno, path);
   return 0;
 }
@@ -790,7 +789,6 @@ static int open_data_fork(const char *path, word16 *access, word16 *error) {
 #if defined(__APPLE__) || defined(__linux__)
 static int open_resource_fork(const char *path, word16 *access, word16 *error) {
 #if defined(__APPLE__)
-static int open_resource_fork(const char *path, word16 *access, word16 *error) {
   // os x / hfs/apfs don't need to specifically create a resource fork.
   // or do they?
 
@@ -1554,20 +1552,19 @@ static word32 fst_change_path(int class, const char *path1, const char *path2) {
     return invalidAccess;
 
   // rename will delete any previous file. ChangePath should return an error.
-#if ! defined(__linux__)
   if (stat(path2, &st) == 0) return dupPathname;
-
-  if (rename(path1, path2) < 0) return host_map_errno_path(errno, path2);
-#else
+#if defined (__linux__)
   //on linux rename both the file and the resource file.
   char rpath1[1024], rpath2[1024]; 
   get_resource_pathname(path1, rpath1);
   get_resource_pathname(path2, rpath2);
-  if (stat(path2, &st) == 0 || stat(rpath2, &st) == 0) return dupPathname;
-  if (rename(path1, path2) < 0) return host_map_errno_path(errno, path2);
-  if (rename(rpath1, rpath2) < 0) return host_map_errno_path(errno, rpath2);
-
+  if(!S_ISDIR(st.st_mode)) { //directories don't have resource forks.
+      if (stat(rpath2,&st) == 0) return dupPathname; //abort if rpath2 already exists
+      if (stat(rpath1,&st) == 0) //Only rename resource fork file if it exists.
+          rename(rpath1, rpath2);
+  }
 #endif
+  if (rename(path1, path2) < 0) return host_map_errno_path(errno, path2);
   return 0;
 }
 

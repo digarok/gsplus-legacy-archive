@@ -1178,7 +1178,7 @@ void Imagewriter::newPage(bool save, bool resetx)
 	if(printer_timout) timeout_dirty=false;
 
 #ifdef HAVE_SDL
-	if (save)
+	if (save && page != NULL)
 		outputPage();
 
 	if(resetx) curX=leftMargin;
@@ -1560,6 +1560,7 @@ void Imagewriter::formFeed()
 {
 #ifdef HAVE_SDL
 	// Don't output blank pages
+	if (page == NULL) return;
 	newPage(!isBlank(),true);
 	finishMultipage();
 #endif // HAVE_SDL
@@ -2177,6 +2178,7 @@ void Imagewriter::finishMultipage()
 
 bool Imagewriter::isBlank() {
 	bool blank = true;
+	if (page == NULL) return blank;
 	SDL_LockSurface(page);
 
 	for (Bit16u y=0; y<page->h; y++)

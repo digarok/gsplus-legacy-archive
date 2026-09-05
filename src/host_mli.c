@@ -26,11 +26,6 @@
 
 #include "host_common.h"
 
-#ifdef _MSC_VER
-#define strcasecmp stricmp
-#define strncasecmp strnicmp
-#endif
-
 
 #define LEVEL 0xBFD8                            // current file level
 #define DEVNUM 0xBF30                           // last slot / drive
@@ -671,6 +666,7 @@ static int mli_destroy(unsigned dcb, const char *path) {
 #else
       if (unlink(path) < 0)
         return host_map_errno_path(errno, path); 
+
 #endif
     default:
       return badStoreType;
@@ -1053,11 +1049,6 @@ static int mli_open(unsigned dcb, const char *name, const char *path) {
   word16 terr = host_get_file_info(path, &fi);
   if (terr) return terr;
 
-#if _WIN32
-  file->h = INVALID_HANDLE_VALUE;
-#else
-  file->fd = -1;
-#endif
 
   if (fi.storage_type == 0x0f || fi.storage_type == 0x0d) {
       unsigned blocks;
